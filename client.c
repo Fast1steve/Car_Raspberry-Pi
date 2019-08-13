@@ -6,73 +6,45 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define SERVERIP "123.207.173.74"
+#define SERVERIP "127.0.0.1"
 #define SERVERPORT 12345
 #define MAXBUFFER 256
 
-char forward[]="å‰";
-char backward[]="å";
-char left[]="å·¦";
-char right[]="å³";
-char num[][4]={{"ä¸€"},{"äºŒ"},{"ä¸‰"},{"å››"},{"äº”"},{"å…­"},{"ä¸ƒ"},{"å…«"},{"ä¹"}};
-char cmd[3];
-void analyze(char* str)
+int main(int argc, char** argv)  
 {
-	for(int i=0;i<9;++i)
+	int begin,end=strlen(argv[3])-1;
+	for(int i=0;i<strlen(argv[3]);++i)
 	{
-		if(num[i][0]==str[6] && num[i][1]==str[7] && num[i][2]==str[8])
+		if(argv[3][i]=='=')
 		{
-			cmd[1]=(char)((i+1)+'0');
+			begin=i+1;
 			break;
 		}
 	}
-	if(str[0]==forward[0] && str[1]==forward[1] && str[2]==forward[2])
+	char* cmd=(char*)malloc(sizeof(char)*(end-begin+1));
+	for(int i=0;i<=end-begin;++i)
+		cmd[i]=argv[3][begin+i];
+	int clientFd,ret;
+	struct sockaddr_in serveraddr;
+	clientFd=socket(AF_INET,SOCK_STREAM,0);//´´½¨socket
+	if(clientFd<0)
 	{
-		cmd[0]='F';
+		printf("socket error:%s\n",strerror(errno));
+		exit(-1);
 	}
-	else if(str[0]==backward[0] && str[1]==backward[1] && str[2]==backward[2])
+	bzero(&serveraddr,sizeof(serveraddr));
+	serveraddr.sin_family=AF_INET;
+	serveraddr.sin_port=htons(SERVERPORT);
+	inet_pton(AF_INET,SERVERIP,&serveraddr.sin_addr);
+	ret=connect(clientFd,(struct sockaddr *)&serveraddr,sizeof(serveraddr));//Á¬½Óµ½·şÎñÆ÷
+	if(ret!=0)
 	{
-		cmd[0]='B';
-	}
-	else if(str[0]==left[0] && str[1]==left[1] && str[2]==left[2])
-	{
-		cmd[0]='L';
-	}
-	else
-	{
-		cmd[0]='R';
-	}
-	cmd[2]='\0';
-}
-int main(int argc, char** argv)
-{
-	while(1)
-	{
-		int clientFd,ret;
-		struct sockaddr_in serveraddr;
-		char buf[MAXBUFFER];
-		clientFd=socket(AF_INET,SOCK_STREAM,0);//åˆ›å»ºsocket
-		if(clientFd<0)
-		{
-			printf("socket error:%s\n",strerror(errno));
-			exit(-1);
-		}
-		bzero(&serveraddr,sizeof(serveraddr));
-		serveraddr.sin_family=AF_INET;
-		serveraddr.sin_port=htons(SERVERPORT);
-		inet_pton(AF_INET,SERVERIP,&serveraddr.sin_addr);
-
-		ret=connect(clientFd,(struct sockaddr *)&serveraddr,sizeof(serveraddr));//è¿æ¥åˆ°æœåŠ¡å™¨
-		bzero(buf,sizeof(buf));
-		read(clientFd,buf,sizeof(buf));//è¯»æ•°æ®
-		printf("echo:%s\n",buf);
-		analyze(buf+3);
-		printf("%s\n",cmd);
-		char str[80];
-		sprintf(str,"python test.py %s",cmd);
-		system(str);
-		sleep(1);
 		close(clientFd);
+		printf("connect error:%s\n",strerror(errno));
+		exit(-1);
 	}
+	write(clientFd,cmd,sizeof(char)*(end-begin+1));//Ğ´Êı¾İ
+	close(clientFd);
+	free(cmd);
 	return (EXIT_SUCCESS);
 }

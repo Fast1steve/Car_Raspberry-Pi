@@ -1,0 +1,10 @@
+#ABNF 1.0 gb2312;
+language zh-CN; 
+mode voice;
+
+root $main;
+$main = 向 $place1 走 $place2 米 | 停止 | 向 $place3 转 $place4 度;
+$place1 = 前 | 后;
+$place2 = 一 | 二 | 三 | 四 | 五 | 六 | 七 | 八 | 九;
+$place3 = 左 | 右;
+$place4 = 三十 | 六十 | 九十;
